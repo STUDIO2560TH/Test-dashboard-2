@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 การวิเคราะห์ผู้เล่น Roblox Game</title>
+    <!-- 1. ดึง Chart.js สำหรับสร้างแผนภูมิ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         body {
@@ -27,93 +28,129 @@
             width: 100%;
             height: 400px; /* กำหนดความสูงของแผนภูมิ */
             margin-top: 30px;
+            position: relative; /* สำคัญสำหรับ Chart.js */
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2em;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Roblox Player Count Analytics (Demo)</h1>
-        <p>แสดงจำนวนผู้เล่นปัจจุบันและแนวโน้มผู้เล่นย้อนหลัง (ตัวอย่างสมมติ)</p>
+        <!-- ชื่อเกมจะถูกอัปเดตด้วย JavaScript -->
+        <h1 id="pageTitle">🚀 Roblox Player Count Analytics</h1> 
+        <p>แสดงจำนวนผู้เล่นปัจจุบันและแนวโน้มผู้เล่น 24 ชั่วโมงล่าสุด (ข้อมูลจริงจาก API)</p>
         
+        <!-- พื้นที่สำหรับแสดงแผนภูมิเส้น -->
         <div class="chart-container">
             <canvas id="playerCountChart"></canvas>
+            <div id="loading">...กำลังโหลดข้อมูลย้อนหลัง...</div>
         </div>
 
+        <!-- พื้นที่สำหรับแสดงข้อมูลสรุปอื่นๆ -->
         <div id="summaryData">
             <h2>สรุปข้อมูลปัจจุบัน</h2>
+            <p><strong>เกม:</strong> <span id="gameName">--</span></p>
             <p><strong>ผู้เล่นปัจจุบัน:</strong> <span id="currentPlayers">--</span></p>
             <p><strong>ผู้เล่นสูงสุดใน 24 ชั่วโมง:</strong> <span id="maxPlayers">--</span></p>
+            <p><small>*อัปเดตข้อมูลทุก 30 วินาที</small></p>
         </div>
         
     </div>
 
     <script>
-        // โค้ด JavaScript สำหรับสร้างแผนภูมิและการดึงข้อมูลจะอยู่ในไฟล์นี้ หรือไฟล์แยก เช่น 'analytics.js'
-        document.addEventListener('DOMContentLoaded', () => {
-            // เรียกใช้ฟังก์ชันหลักเมื่อหน้าเว็บโหลดเสร็จ
-            fetchAndRenderData();
-        });
+        let myChart = null; // เก็บ Reference ของ Chart object
 
-        // ฟังก์ชันสมมติ (Mock Data) สำหรับสาธิต ถ้า Backend ยังไม่เสร็จ
-        function getMockData() {
-            const data = [];
-            const labels = [];
-            let currentPlayers = 5000;
-            for (let i = 0; i < 24; i++) {
-                // สร้างข้อมูลจำนวนผู้เล่นแบบสุ่มที่มีแนวโน้มเป็นจริง
-                currentPlayers += (Math.random() - 0.5) * 1000;
-                if (currentPlayers < 0) currentPlayers = 100; // ป้องกันค่าติดลบ
-                data.push(Math.round(currentPlayers));
-                labels.push(`${24 - i} ชม. ที่แล้ว`);
-            }
-            return { data: data.reverse(), labels: labels.reverse() };
-        }
-        
         async function fetchAndRenderData() {
-            // *** ขั้นตอนนี้ในโปรเจกต์จริงจะเปลี่ยนไปเรียก Backend API ของคุณเอง ***
-            // เช่น: const response = await fetch('/api/analytics/game/123456789');
-            // และรับข้อมูลจริงมาใช้
+            // 1. ดึงข้อมูลสรุป (ผู้เล่นปัจจุบันและสูงสุด)
+            try {
+                const summaryResponse = await fetch('/api/summary');
+                const summaryData = await summaryResponse.json();
 
-            const mockData = getMockData();
-            
-            // อัปเดตข้อมูลสรุป
-            const currentPlayers = mockData.data[mockData.data.length - 1];
-            const maxPlayers = Math.max(...mockData.data);
-            document.getElementById('currentPlayers').textContent = currentPlayers.toLocaleString();
-            document.getElementById('maxPlayers').textContent = maxPlayers.toLocaleString();
+                // อัปเดตข้อมูลสรุปใน UI
+                document.getElementById('pageTitle').textContent = `📊 การวิเคราะห์ผู้เล่น: ${summaryData.game_name}`;
+                document.getElementById('gameName').textContent = summaryData.game_name;
+                document.getElementById('currentPlayers').textContent = summaryData.current_players.toLocaleString();
+                document.getElementById('maxPlayers').textContent = summaryData.max_players_24h.toLocaleString();
 
-            // สร้างแผนภูมิ
-            const ctx = document.getElementById('playerCountChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: mockData.labels, // แกน X (เวลา)
-                    datasets: [{
-                        label: 'จำนวนผู้เล่น (24 ชม. ล่าสุด)',
-                        data: mockData.data, // แกน Y (จำนวนผู้เล่น)
-                        borderColor: 'rgb(26, 115, 232)',
-                        backgroundColor: 'rgba(26, 115, 232, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointRadius: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'จำนวนผู้เล่น'
+            } catch(e) {
+                console.error("Error fetching summary data:", e);
+                document.getElementById('currentPlayers').textContent = 'Error: Cannot connect to server.';
+            }
+
+
+            // 2. ดึงข้อมูลย้อนหลังสำหรับแผนภูมิ
+            try {
+                const historicalResponse = await fetch('/api/analytics/historical');
+                const historicalData = await historicalResponse.json();
+
+                const loadingElement = document.getElementById('loading');
+                const canvas = document.getElementById('playerCountChart');
+
+                if (historicalData.data.length === 0) {
+                    loadingElement.textContent = 'ยังไม่มีข้อมูลย้อนหลัง (รอให้ Scheduler ทำงาน)';
+                    canvas.style.opacity = 0; // ซ่อนแผนภูมิถ้าไม่มีข้อมูล
+                    return;
+                }
+
+                // ซ่อน Loading และแสดงแผนภูมิ
+                loadingElement.style.display = 'none';
+                canvas.style.opacity = 1;
+
+                const ctx = canvas.getContext('2d');
+                
+                // ทำลายแผนภูมิเก่าถ้ามีอยู่
+                if (myChart) {
+                    myChart.destroy();
+                }
+
+                // สร้างแผนภูมิใหม่ด้วยข้อมูลจริง
+                myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: historicalData.labels, // แกน X (เวลา)
+                        datasets: [{
+                            label: 'จำนวนผู้เล่น (24 ชม. ล่าสุด)',
+                            data: historicalData.data, // แกน Y (จำนวนผู้เล่น)
+                            borderColor: 'rgb(26, 115, 232)',
+                            backgroundColor: 'rgba(26, 115, 232, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'จำนวนผู้เล่น'
+                                }
                             }
                         }
                     }
-                }
-            });
-            
+                });
+                
+            } catch (e) {
+                console.error("Error fetching historical data:", e);
+                document.getElementById('loading').textContent = 'Error fetching historical data.';
+                document.getElementById('playerCountChart').style.opacity = 0;
+            }
         }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAndRenderData();
+            // ตั้งเวลาให้ดึงข้อมูลใหม่ทุก 30 วินาที เพื่ออัปเดตผู้เล่นปัจจุบัน
+            setInterval(fetchAndRenderData, 30000); 
+        });
     </script>
 </body>
 </html>
