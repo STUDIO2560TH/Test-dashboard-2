@@ -1,1 +1,5 @@
-FlaskFlask-SQLAlchemyAPSchedulerrequestsgunicorn
+Flask
+Flask-SQLAlchemy
+APScheduler
+requests
+gunicorn
