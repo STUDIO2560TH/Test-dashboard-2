@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 การวิเคราะห์ผู้เล่น Roblox Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f7f9;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            text-align: center;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px; /* กำหนดความสูงของแผนภูมิ */
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Roblox Player Count Analytics (Demo)</h1>
+        <p>แสดงจำนวนผู้เล่นปัจจุบันและแนวโน้มผู้เล่นย้อนหลัง (ตัวอย่างสมมติ)</p>
+        
+        <div class="chart-container">
+            <canvas id="playerCountChart"></canvas>
+        </div>
+
+        <div id="summaryData">
+            <h2>สรุปข้อมูลปัจจุบัน</h2>
+            <p><strong>ผู้เล่นปัจจุบัน:</strong> <span id="currentPlayers">--</span></p>
+            <p><strong>ผู้เล่นสูงสุดใน 24 ชั่วโมง:</strong> <span id="maxPlayers">--</span></p>
+        </div>
+        
+    </div>
+
+    <script>
+        // โค้ด JavaScript สำหรับสร้างแผนภูมิและการดึงข้อมูลจะอยู่ในไฟล์นี้ หรือไฟล์แยก เช่น 'analytics.js'
+        document.addEventListener('DOMContentLoaded', () => {
+            // เรียกใช้ฟังก์ชันหลักเมื่อหน้าเว็บโหลดเสร็จ
+            fetchAndRenderData();
+        });
+
+        // ฟังก์ชันสมมติ (Mock Data) สำหรับสาธิต ถ้า Backend ยังไม่เสร็จ
+        function getMockData() {
+            const data = [];
+            const labels = [];
+            let currentPlayers = 5000;
+            for (let i = 0; i < 24; i++) {
+                // สร้างข้อมูลจำนวนผู้เล่นแบบสุ่มที่มีแนวโน้มเป็นจริง
+                currentPlayers += (Math.random() - 0.5) * 1000;
+                if (currentPlayers < 0) currentPlayers = 100; // ป้องกันค่าติดลบ
+                data.push(Math.round(currentPlayers));
+                labels.push(`${24 - i} ชม. ที่แล้ว`);
+            }
+            return { data: data.reverse(), labels: labels.reverse() };
+        }
+        
+        async function fetchAndRenderData() {
+            // *** ขั้นตอนนี้ในโปรเจกต์จริงจะเปลี่ยนไปเรียก Backend API ของคุณเอง ***
+            // เช่น: const response = await fetch('/api/analytics/game/123456789');
+            // และรับข้อมูลจริงมาใช้
+
+            const mockData = getMockData();
+            
+            // อัปเดตข้อมูลสรุป
+            const currentPlayers = mockData.data[mockData.data.length - 1];
+            const maxPlayers = Math.max(...mockData.data);
+            document.getElementById('currentPlayers').textContent = currentPlayers.toLocaleString();
+            document.getElementById('maxPlayers').textContent = maxPlayers.toLocaleString();
+
+            // สร้างแผนภูมิ
+            const ctx = document.getElementById('playerCountChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: mockData.labels, // แกน X (เวลา)
+                    datasets: [{
+                        label: 'จำนวนผู้เล่น (24 ชม. ล่าสุด)',
+                        data: mockData.data, // แกน Y (จำนวนผู้เล่น)
+                        borderColor: 'rgb(26, 115, 232)',
+                        backgroundColor: 'rgba(26, 115, 232, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'จำนวนผู้เล่น'
+                            }
+                        }
+                    }
+                }
+            });
+            
+        }
+    </script>
+</body>
+</html>
